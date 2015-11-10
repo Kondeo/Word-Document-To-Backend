@@ -1,0 +1,64 @@
+/*********************************
+
+COMMENTS - DO NOT COPY THIS CODE
+
+Worked in the past, I remember having to do this weird thing to get the pages to save a certain place, but I forget.
+
+You may need to adjust "For idx = 1 To numPages" to numPages being the actual pages, as the loop broke on me once.
+
+
+Also, If you navigate to the desired output folder with the "save as" button, 
+and then push cancel, it sets the desired output folder for word for this macro (I Think).
+
+*********************************/
+
+Sub SavePagesAsDoc()
+    Dim orig As Document
+    Dim page As Document
+    Dim numPages As Integer
+    Dim idx As Integer
+    Dim fn As String
+
+
+    ' Keep a reference to the current document.
+    Set orig = ActiveDocument
+
+    ' Calculate the number of pages
+    numPages = ActiveDocument.Range.Information(wdActiveEndPageNumber)
+
+    For idx = 1 To numPages
+        ' Make sure the document is active
+        orig.Activate
+
+        ' Go to the page with index idx
+        Selection.GoTo What:=wdGoToPage, Name:=idx
+
+        ' Select the current page
+        Selection.GoTo What:=wdGoToBookmark, Name:="\page"
+
+        ' Copy the selection
+        Selection.Copy
+
+        ' Create a new document
+        Set page = Documents.Add
+
+        ' Activate it
+        page.Activate
+
+        ' Paste the selection
+        Selection.Paste
+
+        ' Generate the file name
+        fn = "Page" + CStr(idx) + ".html"
+
+
+        ' Save the document as Word 97-2003
+        page.SaveAs fileName:=fn, _
+        FileFormat:=10
+
+
+        ' Close the document
+        page.Close
+
+    Next
+End Sub
