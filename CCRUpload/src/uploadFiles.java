@@ -230,8 +230,6 @@ public class uploadFiles {
 						++numPages;
 					}
 					
-					System.out.println(mongoDocuments.toString());
-					
 					//Insert all of our documents
 					collection.insertMany(mongoDocuments);
 					
