@@ -19,6 +19,7 @@ import javax.swing.JFileChooser;
 
 import org.bson.Document;
 
+
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
@@ -47,6 +48,8 @@ public class uploadFiles {
 		//Welcome The User!
 		System.out.println("Hello! Welcome to the book uploader, plese selected a foler for html pages to be uploaded!");
 		
+		System.out.println();
+		
 		// Open our file chooser
 		JFileChooser chooser = new JFileChooser();
 		chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
@@ -56,8 +59,70 @@ public class uploadFiles {
 			File selectedFile = chooser.getSelectedFile();
 			if (selectedFile.isDirectory())
 			{	
+				
+				
+				//Create a scanner for appending  books together
+				Scanner user = new Scanner(System.in);
+				
+				//Ask if they would like to append books
+				System.out.println("Would you like to append this book to another?" +
+						"\n(Add a number to the pages, so that the page number will " +
+						"start at where the last book's page number left off)\nEnter 0 for no, " +
+						"or the pagenumber the last book left off at");
+				System.out.println();
+				
+				//check their answer is legit, init last page number, and loop for real answer
+				boolean legit = false;
+				int lastPage =  0;
+				while(!legit)
+				{
+					//Get the input
+					String input = user.nextLine();
+					
+					//Get the balue
+					Integer valueInput = Integer.valueOf(input);
+					
+					//Check if it is a number
+					if(valueInput != null)
+					{
+						//Check if it is greater than zero
+						if(valueInput > 0)
+						{
+							//Add it to last page
+							lastPage = valueInput;
+							
+							//Inform the user
+							System.out.println("Awesome! I'll add " + lastPage + " to all page numbers!");
+							System.out.println();
+							
+							//Break from the loop
+							legit = true;
+						}
+						else
+						{
+							//Inform the user
+							System.out.println("Cool! I will not add anything to the page numbers.");
+							System.out.println();
+							
+							//Break from the loop
+							legit = true;
+						}
+					}
+					else {
+						//Sorry
+						System.out.println("Sorry but I can't accept that answer. Could not find an integer in that!");
+						System.out.println();
+					}
+				}
+				
+				//Close the scanner
+				user.close();
+				
+				//Inform the user that we're starting!
+				System.out.println("Now converting and uploading the files...");
+				
 				//First convert it all to UTF
-				selectedFile = utfConvert(selectedFile);
+				selectedFile = utfConvert(selectedFile, lastPage);
 				
 				//Backend Properties SQL
 //				String url = "jdbc:mysql://devdb.kondeo.com:3306/";
@@ -68,88 +133,116 @@ public class uploadFiles {
 				
 				try
 				{
-					//Create our connection to the backend, SQL
+					//Create our connection to the backend
 //					Class.forName(driver).newInstance();
 //					Connection conn = DriverManager.getConnection(url + dbName, userName, password);
 					
 					//Create a new Mongo Client going to the url with the port 3000
-					 MongoClient mongoClient = new MongoClient("devdb.kondeo.com", 3000);
-
+					 MongoClient mongoClient = new MongoClient("localhost" , 27017);
 					 //Get the database table
-					MongoDatabase db = mongoClient.getDatabase("indexes");
-					MongoCollection<Document> collection = db.getCollection("test");
+					MongoDatabase db = mongoClient.getDatabase("UploadedBook");
+					MongoCollection<Document> collection = db.getCollection("Pages");
 					
 					//Get our files in our directory
 					File[] pages = selectedFile.listFiles();
 					
-					//Create a scanner
+					//Create a scanner for the file
 					Scanner scan = null;
 					String totalString = "";
 					
 					//Getting the the pat of the selected 
 					String paths = selectedFile.getAbsolutePath();
 					
+					//Collect the number of pages uploaded
+					int numPages = 0;
+					
 					//Loop for every file in our directory
 					for(int i = 0; i < pages.length; ++i)
 					{
+						
+						//Set the pageNumber
+						int pageNumber = (i + 1 + lastPage);
+						
+						//Make sure the file is not a directory
+						if (pages[i].isFile())
+						{
 
-						//Our total string
-						totalString = "";
-						scan = new Scanner(new File(paths 
-								+ "/Page" + (i + 1) + ".html"), "UTF-8");
-						
-						System.out.println("Uploading Page #" + i + "!");
-						
-						//skip the first 6 lines
-						for(int j = 0; j < 5; ++j)
-						{
-							if(scan.hasNextLine())
-							{
-								scan.nextLine();
-							}
-						}
-						
-						while(scan.hasNextLine())
-						{
-							//Get the line
-							String code = scan.nextLine();
+							//Our total string
+							totalString = "";
+							scan = new Scanner(new File(paths 
+									+ "/Page" + pageNumber + ".html"), "UTF-8");
 							
-							//Check it is not /body
-							if(code.contentEquals("</body>"))
+							System.out.println("Uploading Page #" + pageNumber + "!");
+							System.out.println();
+							
+							//skip the first 6 lines
+							for(int j = 0; j < 5; ++j)
 							{
-								//Exit the loop
-								break;
+								if(scan.hasNextLine())
+								{
+									scan.nextLine();
+								}
 							}
-							else if(code.contentEquals("<body lang=EN-US>") || code.contentEquals("</head>"))
+							
+							while(scan.hasNextLine())
 							{
-								//Skip it
-								//print the line
-								System.out.println("SKIPPED" + code);
-							}
-							else
-							{
-								//print the line
-								System.out.println(code);
-								//Add it to our total string
-								totalString = totalString + code;
+								//Get the line
+								String code = scan.nextLine();
 								
+								//Check it is not /body
+								if(code.contentEquals("</body>"))
+								{
+									//Exit the loop
+									break;
+								}
+								else if(code.contentEquals("<body lang=EN-US>") || code.contentEquals("</head>"))
+								{
+									//Skip it
+									//print the line
+									System.out.println("SKIPPED" + code);
+								}
+								else
+								{
+									//print the line
+									System.out.println(code);
+									//Add it to our total string
+									totalString = totalString + code;
+									
+								}
 							}
+							
+						
+						
+						
+	//						String insertTableSQL = "INSERT INTO book (page,content) VALUES (?,?)";
+	//						java.sql.PreparedStatement preparedStatement = conn.prepareStatement(insertTableSQL);
+	//						preparedStatement.setInt(1, i + 1);
+	//						preparedStatement.setString(2, totalString);
+	//						// execute insert SQL stetement
+	//						preparedStatement .executeUpdate();
+							
+							//Insert the page to the DB
+							//cloumns: _id, number, content
+							Document doc = new Document("number", Integer.toString(pageNumber))
+					        .append("content", totalString);
+							
+							collection.insertOne(doc);
+							
+							
+							
+							//Increase the number of pages converted
+							++numPages;
 						}
-						
-//						String insertTableSQL = "INSERT INTO book (page,content) VALUES (?,?)";
-//						java.sql.PreparedStatement preparedStatement = conn.prepareStatement(insertTableSQL);
-//						preparedStatement.setInt(1, i + 1);
-//						preparedStatement.setString(2, totalString);
-//						// execute insert SQL stetement
-//						preparedStatement .executeUpdate();
-						
-						//Insert the page to the DB
-						
-						
 					}
 					
+					//Close our open connections
 					scan.close();
+					mongoClient.close(); 
 //					conn.close();
+					
+					//Output the number of pages, and goodbye the user
+					System.out.println("Pages Uploaded: " + numPages + ", Thank you for using the app. " +
+							"Good luck with your Database!");
 				}
 				catch (Exception e)
 				{
@@ -171,7 +264,7 @@ public class uploadFiles {
 	
 	
 	//Function to convert our files to UTF
-	public static File utfConvert(File selectedFile)
+	public static File utfConvert(File selectedFile, Integer lastPage)
 	{
 		
 		//Place all of the files in the directory into an arraylist
@@ -214,7 +307,7 @@ public class uploadFiles {
 				}
 
 				// Create the file, and spit all read HTML into it (As UTF)
-				File newFile = new File(files.get(i).getParentFile() + "/Converted/Page" + i
+				File newFile = new File(files.get(i).getParentFile() + "/Converted/Page" + (i + lastPage)
 						+ ".html");
 				FileOutputStream fos = new FileOutputStream(newFile.getAbsolutePath());
 				out = new OutputStreamWriter(fos, "UTF-8");
@@ -242,7 +335,8 @@ public class uploadFiles {
 		}
 
 		//Inform User of success
-		System.out.print("Converted HTML into UTF and placed into a Converted sub folder");
+		System.out.println("Converted HTML into UTF and placed into a Converted sub folder");
+		System.out.println();
 		
 		//Return the converted foldr directory
 		return convertedFolder;
