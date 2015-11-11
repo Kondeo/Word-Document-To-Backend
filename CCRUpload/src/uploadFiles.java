@@ -16,9 +16,9 @@ import java.util.Scanner;
 
 import javax.naming.NamingException;
 import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
 
 import org.bson.Document;
-
 
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoCollection;
@@ -139,9 +139,13 @@ public class uploadFiles {
 					
 					//Create a new Mongo Client going to the url with the port 3000
 					 MongoClient mongoClient = new MongoClient("localhost" , 27017);
+					 
 					 //Get the database table
 					MongoDatabase db = mongoClient.getDatabase("UploadedBook");
 					MongoCollection<Document> collection = db.getCollection("Pages");
+					
+					//Our array list of documents
+					ArrayList<Document> mongoDocuments = new ArrayList<Document>();
 					
 					//Get our files in our directory
 					File[] pages = selectedFile.listFiles();
@@ -162,78 +166,74 @@ public class uploadFiles {
 						
 						//Set the pageNumber
 						int pageNumber = (i + 1 + lastPage);
-						
-						//Make sure the file is not a directory
-						if (pages[i].isFile())
-						{
 
-							//Our total string
-							totalString = "";
-							scan = new Scanner(new File(paths 
-									+ "/Page" + pageNumber + ".html"), "UTF-8");
-							
-							System.out.println("Uploading Page #" + pageNumber + "!");
-							System.out.println();
-							
-							//skip the first 6 lines
-							for(int j = 0; j < 5; ++j)
+						//Our total string
+						totalString = "";
+						scan = new Scanner(new File(paths 
+								+ "/Page" + pageNumber + ".html"), "UTF-8");
+						
+						System.out.println("Uploading Page #" + pageNumber + "!");
+						System.out.println();
+						
+						//skip the first 6 lines
+						for(int j = 0; j < 5; ++j)
+						{
+							if(scan.hasNextLine())
 							{
-								if(scan.hasNextLine())
-								{
-									scan.nextLine();
-								}
+								scan.nextLine();
 							}
-							
-							while(scan.hasNextLine())
-							{
-								//Get the line
-								String code = scan.nextLine();
-								
-								//Check it is not /body
-								if(code.contentEquals("</body>"))
-								{
-									//Exit the loop
-									break;
-								}
-								else if(code.contentEquals("<body lang=EN-US>") || code.contentEquals("</head>"))
-								{
-									//Skip it
-									//print the line
-									System.out.println("SKIPPED" + code);
-								}
-								else
-								{
-									//print the line
-									System.out.println(code);
-									//Add it to our total string
-									totalString = totalString + code;
-									
-								}
-							}
-							
-						
-						
-						
-	//						String insertTableSQL = "INSERT INTO book (page,content) VALUES (?,?)";
-	//						java.sql.PreparedStatement preparedStatement = conn.prepareStatement(insertTableSQL);
-	//						preparedStatement.setInt(1, i + 1);
-	//						preparedStatement.setString(2, totalString);
-	//						// execute insert SQL stetement
-	//						preparedStatement .executeUpdate();
-							
-							//Insert the page to the DB
-							//cloumns: _id, number, content
-							Document doc = new Document("number", Integer.toString(pageNumber))
-					        .append("content", totalString);
-							
-							collection.insertOne(doc);
-							
-							
-							
-							//Increase the number of pages converted
-							++numPages;
 						}
+						
+						while(scan.hasNextLine())
+						{
+							//Get the line
+							String code = scan.nextLine();
+							
+							//Check it is not /body
+							if(code.contentEquals("</body>"))
+							{
+								//Exit the loop
+								break;
+							}
+							else if(code.contentEquals("<body lang=EN-US>") || code.contentEquals("</head>"))
+							{
+								//Skip it
+								//print the line, commented only testing
+								//System.out.println("SKIPPED" + code);
+							}
+							else
+							{
+								//print the line, commented only testing
+								//System.out.println(code);
+								//Add it to our total string
+								totalString = totalString + code;
+								
+							}
+						}
+					
+//						String insertTableSQL = "INSERT INTO book (page,content) VALUES (?,?)";
+//						java.sql.PreparedStatement preparedStatement = conn.prepareStatement(insertTableSQL);
+//						preparedStatement.setInt(1, i + 1);
+//						preparedStatement.setString(2, totalString);
+//						// execute insert SQL stetement
+//						preparedStatement .executeUpdate();
+						
+						//Insert the page to the array
+						//cloumns: _id, number, content
+						Document doc = new Document("number", Integer.toString(pageNumber))
+				        .append("content", totalString);
+						
+						//Add to documents array to be sent
+						mongoDocuments.add(doc);
+						
+						//Increase the number of pages converted
+						++numPages;
 					}
+					
+					System.out.println(mongoDocuments.toString());
+					
+					//Insert all of our documents
+					collection.insertMany(mongoDocuments);
 					
 					//Close our open connections
 					scan.close();
