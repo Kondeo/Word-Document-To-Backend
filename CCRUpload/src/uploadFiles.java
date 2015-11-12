@@ -16,7 +16,6 @@ import java.util.Scanner;
 
 import javax.naming.NamingException;
 import javax.swing.JFileChooser;
-import javax.swing.JOptionPane;
 
 import org.bson.Document;
 
@@ -221,6 +220,7 @@ public class uploadFiles {
 						//Insert the page to the array
 						//cloumns: _id, number, content
 						Document doc = new Document("number", Integer.toString(pageNumber))
+						.append("nextnumber", Integer.toString(pageNumber + 1))
 				        .append("content", totalString);
 						
 						//Add to documents array to be sent
