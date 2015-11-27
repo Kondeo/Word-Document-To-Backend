@@ -59,70 +59,6 @@ public class uploadFiles {
 			if (selectedFile.isDirectory())
 			{	
 				
-				
-				//Create a scanner for appending  books together
-				Scanner user = new Scanner(System.in);
-				
-				//Ask if they would like to append books
-				System.out.println("Would you like to append this book to another?" +
-						"\n(Add a number to the pages, so that the page number will " +
-						"start at where the last book's page number left off)\nEnter 0 for no, " +
-						"or the pagenumber the last book left off at");
-				System.out.println();
-				
-				//check their answer is legit, init last page number, and loop for real answer
-				boolean legit = false;
-				int lastPage =  0;
-				while(!legit)
-				{
-					//Get the input
-					String input = user.nextLine();
-					
-					//Get the balue
-					Integer valueInput = Integer.valueOf(input);
-					
-					//Check if it is a number
-					if(valueInput != null)
-					{
-						//Check if it is greater than zero
-						if(valueInput > 0)
-						{
-							//Add it to last page
-							lastPage = valueInput;
-							
-							//Inform the user
-							System.out.println("Awesome! I'll add " + lastPage + " to all page numbers!");
-							System.out.println();
-							
-							//Break from the loop
-							legit = true;
-						}
-						else
-						{
-							//Inform the user
-							System.out.println("Cool! I will not add anything to the page numbers.");
-							System.out.println();
-							
-							//Break from the loop
-							legit = true;
-						}
-					}
-					else {
-						//Sorry
-						System.out.println("Sorry but I can't accept that answer. Could not find an integer in that!");
-						System.out.println();
-					}
-				}
-				
-				//Close the scanner
-				user.close();
-				
-				//Inform the user that we're starting!
-				System.out.println("Now converting and uploading the files...");
-				
-				//First convert it all to UTF
-				selectedFile = utfConvert(selectedFile, lastPage);
-				
 				//Backend Properties SQL
 //				String url = "jdbc:mysql://devdb.kondeo.com:3306/";
 //				String dbName = "mwwwordpairs";
@@ -136,6 +72,9 @@ public class uploadFiles {
 //					Class.forName(driver).newInstance();
 //					Connection conn = DriverManager.getConnection(url + dbName, userName, password);
 					
+					//Inform the user that we're starting!
+					System.out.println("Connecting to the database...");
+					
 					//Create a new Mongo Client going to the url with the port 3000
 					 MongoClient mongoClient = new MongoClient("localhost" , 27017);
 					 
@@ -145,6 +84,79 @@ public class uploadFiles {
 					
 					//Our array list of documents
 					ArrayList<Document> mongoDocuments = new ArrayList<Document>();
+					
+					
+					//Timeout to allow the backend connection logs, kinda hacky, but makes the console look better
+					try{
+					    Thread.sleep(750);
+					}catch(InterruptedException e){
+					    System.out.println("got interrupted!");
+					}
+					
+					//Create a scanner for appending  books together
+					Scanner user = new Scanner(System.in);
+					
+					//Ask if they would like to append books
+					System.out.println("Would you like to append this book to another? " +
+					"Enter y for yes or n for no.");
+					System.out.println();
+					
+					//check their answer is legit, init last page number, and loop for real answer
+					boolean legit = false;
+					int lastPage = 0;
+					while(!legit)
+					{
+						//Get the input
+						String input = user.nextLine();
+						
+						//Check if it is a character
+						if(input.length() > 0)
+						{
+							//Check if it is greater than zero
+							if(input.toLowerCase().charAt(0) == 'y')
+							{
+								//Add it to last page
+								lastPage = (int)collection.count();
+								
+								//Inform the user
+								System.out.println("Awesome! I'll add " + lastPage + " to all page numbers!");
+								System.out.println();
+								
+								//Break from the loop
+								legit = true;
+							}
+							else if(input.toLowerCase().charAt(0) == 'n')
+							{
+								//Inform the user
+								System.out.println("Cool! I will not add anything to the page numbers.");
+								System.out.println();
+								
+								//Break from the loop
+								legit = true;
+							}
+							else {
+								//Sorry
+								System.out.println("Sorry but I can't accept that answer. Enter y for yes or n for no.");
+								System.out.println();
+							}
+						}
+						else {
+							//Sorry
+							System.out.println("Sorry but I can't accept that answer. Enter y for yes or n for no.");
+							System.out.println();
+						}
+					}
+					
+					//Close the scanner
+					user.close();
+					
+					
+					
+					//Inform the user that we're starting!
+					System.out.println("Now converting and uploading the files...");
+					
+					//First convert it all to UTF
+					selectedFile = utfConvert(selectedFile, lastPage);
 					
 					//Get our files in our directory
 					File[] pages = selectedFile.listFiles();
@@ -267,6 +279,16 @@ public class uploadFiles {
 		
 		//Place all of the files in the directory into an arraylist
 		ArrayList<File> files = new ArrayList<File>(Arrays.asList(selectedFile.listFiles()));
+		
+		//Remove all directories in the folder
+		for(int i = 0; i < files.size(); ++i)
+		{
+			//Check if the file is a folder, if it is remove it!
+			if(files.get(i).isDirectory()) {
+				files.remove(i);
+				i--;
+			}
+		}
 		
 		//Sort the arraylist
 		Collections.sort(files);
