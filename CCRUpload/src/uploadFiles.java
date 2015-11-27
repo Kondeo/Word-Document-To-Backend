@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Scanner;
+import java.util.regex.Pattern;
 
 import javax.naming.NamingException;
 import javax.swing.JFileChooser;
@@ -154,6 +155,7 @@ public class uploadFiles {
 					
 					//Inform the user that we're starting!
 					System.out.println("Now converting and uploading the files...");
+					System.out.println();
 					
 					//First convert it all to UTF
 					selectedFile = utfConvert(selectedFile, lastPage);
@@ -221,6 +223,56 @@ public class uploadFiles {
 								
 							}
 						}
+						
+						
+						
+						/*
+						 * Clean up the html that Microsoft word adds to our pages (Javascript written by Julian, converted by Aaron)
+						 */
+						
+						//Remove LineBreaks
+						String lineRegex = "/(\n|\r| class=(\")?Mso[a-zA-Z]+(\")?)/g";
+						totalString.replaceAll(lineRegex, " ");
+						
+						//Remove comments
+						String commentRegex = "<!--(.*?)-->/g";
+						totalString.replaceAll(commentRegex, "");
+						
+						//Remove tags
+						String tagRegex = "<(/)*(meta|link|span|\\?xml:|st1:|o:|font)(.*?)>/gi";
+						totalString.replaceAll(tagRegex, "");
+						
+						
+						//Remove everything in between and including tags '<style(.)style(.)>
+						String[] badTags = {"style", "script", "applet", "embed", "noframes", "noscript"};
+						
+						for(int ii = 0; ii < badTags.length; ++ii) {
+							String badTagRegex = "<" + badTags[ii] + ".*?" + badTags[ii] + "(.*?)>";
+							totalString.replaceAll(badTagRegex, "");
+						}
+						
+						//Remove all the bad attributes
+						String[] badAttributes = {"style", "start"};
+						
+						for(int ii = 0; ii < badAttributes.length; ++ii) {
+							String badAttRegex = " " + badAttributes[ii] + "=\"(.*?)\"/gi";
+							totalString.replaceAll(badAttRegex, "");
+						}
+						
+						//Replace some spaces
+						totalString.replaceAll("/     /g", " ");
+						totalString.replaceAll("/    /g", " ");
+						totalString.replaceAll("/   /g", " ");
+						totalString.replaceAll("/  /g", " ");
+						totalString.replaceAll("/text-indent:-17.95pt;/g", "margin-left: 23.95pt;");
+						
+						
+						/*
+						 * Finished cleaning HTML
+						 */
+						
+						
+						
 					
 //						String insertTableSQL = "INSERT INTO book (page,content) VALUES (?,?)";
 //						java.sql.PreparedStatement preparedStatement = conn.prepareStatement(insertTableSQL);
