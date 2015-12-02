@@ -224,55 +224,8 @@ public class uploadFiles {
 							}
 						}
 						
-						
-						
-						/*
-						 * Clean up the html that Microsoft word adds to our pages (Javascript written by Julian, converted by Aaron)
-						 */
-						
-						//Remove LineBreaks
-						String lineRegex = "/(\n|\r| class=(\")?Mso[a-zA-Z]+(\")?)/g";
-						totalString.replaceAll(lineRegex, " ");
-						
-						//Remove comments
-						String commentRegex = "<!--(.*?)-->/g";
-						totalString.replaceAll(commentRegex, "");
-						
-						//Remove tags
-						String tagRegex = "<(/)*(meta|link|span|\\?xml:|st1:|o:|font)(.*?)>/gi";
-						totalString.replaceAll(tagRegex, "");
-						
-						
-						//Remove everything in between and including tags '<style(.)style(.)>
-						String[] badTags = {"style", "script", "applet", "embed", "noframes", "noscript"};
-						
-						for(int ii = 0; ii < badTags.length; ++ii) {
-							String badTagRegex = "<" + badTags[ii] + ".*?" + badTags[ii] + "(.*?)>";
-							totalString.replaceAll(badTagRegex, "");
-						}
-						
-						//Remove all the bad attributes
-						String[] badAttributes = {"style", "start"};
-						
-						for(int ii = 0; ii < badAttributes.length; ++ii) {
-							String badAttRegex = " " + badAttributes[ii] + "=\"(.*?)\"/gi";
-							totalString.replaceAll(badAttRegex, "");
-						}
-						
-						//Replace some spaces
-						totalString.replaceAll("/     /g", " ");
-						totalString.replaceAll("/    /g", " ");
-						totalString.replaceAll("/   /g", " ");
-						totalString.replaceAll("/  /g", " ");
-						totalString.replaceAll("/text-indent:-17.95pt;/g", "margin-left: 23.95pt;");
-						
-						
-						/*
-						 * Finished cleaning HTML
-						 */
-						
-						
-						
+						//Clean up the html
+						totalString = cleanWord(totalString);
 					
 //						String insertTableSQL = "INSERT INTO book (page,content) VALUES (?,?)";
 //						java.sql.PreparedStatement preparedStatement = conn.prepareStatement(insertTableSQL);
@@ -412,6 +365,55 @@ public class uploadFiles {
 		
 		//Return the converted foldr directory
 		return convertedFolder;
+	}
+	
+	/*
+	 * Clean up the html that Microsoft word adds to our pages (Javascript written by Julian, converted by Aaron)
+	 */
+	public static String cleanWord(String totalString) {
+		
+		//Function to clean up word formatting
+		
+		//Remove LineBreaks
+		String lineRegex = "/(\n|\r| class=(\")?Mso[a-zA-Z]+(\")?)/g";
+		totalString.replaceAll(lineRegex, " ");
+		
+		//Remove comments
+		String commentRegex = "<!--(.*?)-->/g";
+		totalString.replaceAll(commentRegex, "");
+		
+		//Remove tags
+		String tagRegex = "<(/)*(meta|link|span|\\?xml:|st1:|o:|font)(.*?)>/gi";
+		totalString.replaceAll(tagRegex, "");
+		
+		
+		//Remove everything in between and including tags '<style(.)style(.)>
+		String[] badTags = {"style", "script", "applet", "embed", "noframes", "noscript"};
+		
+		for(int ii = 0; ii < badTags.length; ++ii) {
+			String badTagRegex = "<" + badTags[ii] + ".*?" + badTags[ii] + "(.*?)>";
+			totalString.replaceAll(badTagRegex, "");
+		}
+		
+		//Remove all the bad attributes
+		String[] badAttributes = {"style", "start"};
+		
+		for(int ii = 0; ii < badAttributes.length; ++ii) {
+			String badAttRegex = " " + badAttributes[ii] + "=\"(.*?)\"/gi";
+			totalString.replaceAll(badAttRegex, "");
+		}
+		
+		//Replace some spaces
+		totalString.replaceAll("/     /g", " ");
+		totalString.replaceAll("/    /g", " ");
+		totalString.replaceAll("/   /g", " ");
+		totalString.replaceAll("/  /g", " ");
+		totalString.replaceAll("/text-indent:-17.95pt;/g", "margin-left: 23.95pt;");
+		
+		
+		//Finally return the finished string
+		return totalString;
+		
 	}
 
 }
